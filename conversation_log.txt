@@ -1,1 +1,712 @@
+SECTION 1.1 - PROMPT 1:
 
+I’m building a CLI Task Manager in Python. It must support add, list and remove tasks stored in memory. Please produce pseudocode only using techniques: lists/dictionaries for storage, simple functions with parameters, basic file operations only if needed for persistence, while-loops for a menu, and basic try/except for input/file errors.
+
+Please provide pseudocode that only uses basic Python concepts suitable for our introductory course (lists, simple file reading with basic error handling, random selection, and simple input validation). Follow a structured planning approach with clear steps, including: problem restatement, inputs/outputs, example walkthrough, modular pseudocode (functions), and a main programme flow.
+
+AI RESPONSE:
+
+Problem restatement
+
+Build a small command-line Task Manager that keeps tasks in memory (a list/dicts while the program runs). The user can:
+- Add a task
+- List all tasks
+- Remove a task by its ID/index
+Optionally: save to / load from a text file for simple persistence, and pick a random task to do next.
+
+Inputs & Outputs
+
+-Inputs: Menu choice (1–6); Task text when adding; ID to remove (number); Optional filename for save/load
+-Output: Menu + prompts; Success/error messages; A formatted task list
+
+Example walkthrough
+
+Program shows menu.
+User chooses 1 (Add). Enters “Finish Week 10 notes”. Program stores it with ID 1.
+User chooses 1 again. Enters “Buy milk”. Program stores with ID 2.
+User chooses 2 (List). Program prints: Finish Week 10 notes; Buy milk.
+User chooses 3 (Remove). Enters 1. Program removes task with ID 1.
+User chooses 2 (List). Now shows only: Buy milk.
+User chooses 0 (Exit). Program ends.
+
+Data model
+
+Use a list of dictionaries: tasks = [ {"id": 1, "text": "…"}, {"id": 2, "text": "…"} ]
+Track next_id as an integer that increases when adding tasks.
+
+Modular pseudocode
+
+FUNCTION show_menu():
+    PRINT "=== Task Manager ==="
+    PRINT "1) Add task"
+    PRINT "2) List tasks"
+    PRINT "3) Remove task"
+    PRINT "4) Save to file (optional)"
+    PRINT "5) Load from file (optional)"
+    PRINT "6) Pick a random task (optional)"
+    PRINT "0) Exit"
+
+FUNCTION read_int(prompt_text):
+    LOOP:
+        INPUT raw = input(prompt_text)
+        TRY:
+            choice = int(raw)
+            RETURN choice
+        EXCEPT ValueError:
+            PRINT "Please enter a whole number."
+
+FUNCTION add_task(tasks, next_id):
+    INPUT text = input("Enter task: ").strip()
+    IF text == "":
+        PRINT "Task cannot be empty."
+        RETURN next_id          # no change
+    NEW task = {"id": next_id, "text": text}
+    APPEND task TO tasks
+    PRINT "Added task with ID", next_id
+    RETURN next_id + 1          # increment id
+
+FUNCTION list_tasks(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "No tasks yet."
+        RETURN
+    PRINT "--- Your tasks ---"
+    FOR each task IN tasks:
+        PRINT "[" + task["id"] + "] " + task["text"]
+
+FUNCTION find_task_index_by_id(tasks, target_id):
+    # Returns the index in the list, or -1 if not found
+    FOR i FROM 0 TO LENGTH(tasks)-1:
+        IF tasks[i]["id"] == target_id:
+            RETURN i
+    RETURN -1
+
+FUNCTION remove_task(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "Nothing to remove."
+        RETURN
+    id_to_remove = read_int("Enter ID to remove: ")
+    idx = find_task_index_by_id(tasks, id_to_remove)
+    IF idx == -1:
+        PRINT "No task with that ID."
+        RETURN
+    REMOVED = tasks[idx]
+    DELETE tasks[idx]
+    PRINT "Removed: [" + REMOVED["id"] + "] " + REMOVED["text"]
+
+FUNCTION save_tasks_to_file(tasks, filename):
+    # Very simple line-by-line format: "id|text"
+    TRY:
+        OPEN file with name filename FOR writing AS f
+        FOR each task IN tasks:
+            WRITE (task["id"] + "|" + task["text"] + "\n") TO f
+        CLOSE f
+        PRINT "Saved", LENGTH(tasks), "tasks to", filename
+    EXCEPT any file error:
+        PRINT "Could not save to file."
+
+FUNCTION load_tasks_from_file(filename):
+    # Returns (new_tasks_list, next_id_value)
+    NEW new_tasks = []
+    max_id_seen = 0
+    TRY:
+        OPEN file with name filename FOR reading AS f
+        FOR each line IN f:
+            STRIP line
+            IF line == "":
+                CONTINUE
+            # Expect "id|text"
+            SPLIT line by "|" INTO parts
+            IF LENGTH(parts) < 2:
+                CONTINUE      # skip malformed line
+            TRY:
+                parsed_id = int(parts[0])
+            EXCEPT ValueError:
+                CONTINUE      # skip malformed id
+            task_text = parts[1]
+            APPEND {"id": parsed_id, "text": task_text} TO new_tasks
+            IF parsed_id > max_id_seen:
+                max_id_seen = parsed_id
+        CLOSE f
+        next_id = max_id_seen + 1
+        PRINT "Loaded", LENGTH(new_tasks), "tasks from", filename
+        RETURN (new_tasks, next_id)
+    EXCEPT any file error:
+        PRINT "Could not load file. Starting with empty list."
+        RETURN ([], 1)
+
+FUNCTION pick_random_task(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "No tasks to pick from."
+        RETURN
+    # Intro-level random selection approach:
+    # generate a random index from 0 to len-1 using a simple helper if available.
+    # If random library is allowed by your Week 10 scope, use it; otherwise simulate.
+    # Pseudocode assuming 'random_index(0, n_minus_1)' is available:
+    idx = random_index(0, LENGTH(tasks)-1)
+    chosen = tasks[idx]
+    PRINT "Try this next: [" + chosen["id"] + "] " + chosen["text"]
+     
+Main programme flow
+
+# Initialization
+tasks = []            # empty list at start
+next_id = 1           # first ID to assign
+
+LOOP FOREVER:
+    show_menu()
+    choice = read_int("Choose an option (0-6): ")
+
+    IF choice == 1:
+        next_id = add_task(tasks, next_id)
+
+    ELIF choice == 2:
+        list_tasks(tasks)
+
+    ELIF choice == 3:
+        remove_task(tasks)
+
+    ELIF choice == 4:
+        INPUT fname = input("Filename to save to: ").strip()
+        IF fname == "":
+            PRINT "Filename cannot be empty."
+        ELSE:
+            save_tasks_to_file(tasks, fname)
+
+    ELIF choice == 5:
+        INPUT fname = input("Filename to load from: ").strip()
+        IF fname == "":
+            PRINT "Filename cannot be empty."
+        ELSE:
+            (tasks, next_id) = load_tasks_from_file(fname)
+
+    ELIF choice == 6:
+        pick_random_task(tasks)
+
+    ELIF choice == 0:
+        PRINT "Goodbye!"
+        BREAK
+
+    ELSE:
+        PRINT "Invalid choice. Please enter 0–6."
+     
+COURSE CONSTRAINT CHECK:
+
+I used the structured planning method and modular function design principles from Week 4: Algorithm Design and Modular Functions, which guided the clear definition of inputs, outputs, and main flow before coding.
+
+SECTION 1.2 - PROMPT 1:
+
+Please refine the pseudocode to improve basic robustness by validating empty or whitespace-only titles, preventing case-insensitive duplicates with friendly messages, safely handling non-numeric or out-of-range inputs for removal, rejecting blank filenames and preserving tasks if a load file is missing, and keeping the menu responsive after invalid inputs — using only simple while loops, if/elif/else statements, and basic try/except for conversions and file I/O.
+
+AI RESPONSE:
+
+Data model & helpers
+
+# In-memory store
+tasks = []          # list of {"id": int, "text": string}
+next_id = 1         # increases after each successful add
+
+FUNCTION normalize(text):
+    # Return a trimmed, lowercased version for comparisons
+    RETURN lower(strip(text))
+
+FUNCTION has_duplicate_text(tasks, candidate_text):
+    norm_new = normalize(candidate_text)
+    FOR i FROM 0 TO LENGTH(tasks)-1:
+        IF normalize(tasks[i]["text"]) == norm_new:
+            RETURN True
+    RETURN False
+
+FUNCTION find_task_index_by_id(tasks, target_id):
+    FOR i FROM 0 TO LENGTH(tasks)-1:
+        IF tasks[i]["id"] == target_id:
+            RETURN i
+    RETURN -1
+     
+UI helpers
+
+FUNCTION show_menu():
+    PRINT "=== Task Manager ==="
+    PRINT "1) Add task"
+    PRINT "2) List tasks"
+    PRINT "3) Remove task"
+    PRINT "4) Save to file (optional)"
+    PRINT "5) Load from file (optional)"
+    PRINT "6) Pick a random task (optional)"
+    PRINT "0) Exit"
+     
+Core features
+
+FUNCTION add_task(tasks, next_id):
+    INPUT raw = input("Enter task title: ")
+    title = strip(raw)
+
+    IF title == "":
+        PRINT "❗ Task cannot be empty or spaces only."
+        RETURN next_id     # no change
+
+    IF has_duplicate_text(tasks, title):
+        PRINT "❗ A task with the same title already exists (case-insensitive)."
+        RETURN next_id     # no change
+
+    NEW task = {"id": next_id, "text": title}
+    APPEND task TO tasks
+    PRINT "✅ Added task [" + next_id + "]: " + title
+    RETURN next_id + 1
+     
+
+FUNCTION list_tasks(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "(No tasks yet.)"
+        RETURN
+    PRINT "--- Your tasks ---"
+    FOR each task IN tasks:
+        PRINT "[" + task["id"] + "] " + task["text"]
+     
+
+FUNCTION remove_task(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "❗ Nothing to remove."
+        RETURN
+
+    INPUT raw = input("Enter ID to remove: ")
+    TRY:
+        chosen_id = int(raw)
+    EXCEPT ValueError:
+        PRINT "❗ Please enter a whole number for the ID."
+        RETURN   # keep menu responsive
+
+    idx = find_task_index_by_id(tasks, chosen_id)
+    IF idx == -1:
+        PRINT "❗ No task with ID " + chosen_id + "."
+        RETURN
+
+    removed = tasks[idx]
+    DELETE tasks[idx]
+    PRINT "🗑️ Removed [" + removed["id"] + "]: " + removed["text"]
+     
+Optional persistence
+
+FUNCTION save_tasks_to_file(tasks, filename):
+    name = strip(filename)
+    IF name == "":
+        PRINT "❗ Filename cannot be blank."
+        RETURN
+
+    TRY:
+        OPEN file with name 'name' FOR writing AS f
+        FOR each task IN tasks:
+            WRITE (task["id"] + "|" + task["text"] + "\n") TO f
+        CLOSE f
+        PRINT "💾 Saved " + LENGTH(tasks) + " tasks to '" + name + "'."
+    EXCEPT any file error:
+        PRINT "❗ Could not save to file."
+     
+
+FUNCTION load_tasks_from_file(filename):
+    # Return (loaded_ok, new_tasks, new_next_id)
+    name = strip(filename)
+    IF name == "":
+        PRINT "❗ Filename cannot be blank."
+        RETURN (False, [], 0)
+
+    NEW tmp_tasks = []
+    max_id_seen = 0
+
+    TRY:
+        OPEN file with name 'name' FOR reading AS f
+        FOR each line IN f:
+            line = strip(line)
+            IF line == "":
+                CONTINUE
+            parts = SPLIT line BY "|"
+            IF LENGTH(parts) < 2:
+                CONTINUE
+            TRY:
+                parsed_id = int(parts[0])
+            EXCEPT ValueError:
+                CONTINUE
+            text_part = parts[1]
+            APPEND {"id": parsed_id, "text": text_part} TO tmp_tasks
+            IF parsed_id > max_id_seen:
+                max_id_seen = parsed_id
+        CLOSE f
+
+        new_next_id = max_id_seen + 1
+        PRINT "📁 Loaded " + LENGTH(tmp_tasks) + " tasks from '" + name + "'."
+        RETURN (True, tmp_tasks, new_next_id)
+
+    EXCEPT any file error:
+        PRINT "❗ File not found or unreadable. Kept your current tasks unchanged."
+        RETURN (False, [], 0)
+     
+Optional “random task” helper
+
+
+FUNCTION pick_random_task(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "❗ No tasks to pick from."
+        RETURN
+    # Assume an intro-level helper exists: random_index(low, high)
+    idx = random_index(0, LENGTH(tasks)-1)
+    chosen = tasks[idx]
+    PRINT "🎯 Try this next: [" + chosen["id"] + "] " + chosen["text"]
+     
+Main loop
+
+LOOP FOREVER:
+    show_menu()
+    INPUT raw_choice = input("Choose an option (0-6): ")
+    TRY:
+        choice = int(raw_choice)
+    EXCEPT ValueError:
+        PRINT "❗ Invalid choice. Please enter a number 0–6."
+        CONTINUE   # back to menu promptly
+
+    IF choice == 1:
+        next_id = add_task(tasks, next_id)
+
+    ELIF choice == 2:
+        list_tasks(tasks)
+
+    ELIF choice == 3:
+        remove_task(tasks)
+
+    ELIF choice == 4:
+        INPUT fname = input("Filename to save to: ")
+        save_tasks_to_file(tasks, fname)
+
+    ELIF choice == 5:
+        INPUT fname = input("Filename to load from: ")
+        (ok, new_tasks, new_next) = load_tasks_from_file(fname)
+        IF ok == True:
+            tasks = new_tasks
+            next_id = new_next
+        # If not ok, current tasks remain unchanged
+
+    ELIF choice == 6:
+        pick_random_task(tasks)
+
+    ELIF choice == 0:
+        PRINT "Goodbye!"
+        BREAK
+
+    ELSE:
+        PRINT "❗ Invalid choice. Please enter a number 0–6."
+     
+COURSE CONSTRAINT CHECK:
+
+This refinement applied defensive programming and input validation concepts from Week 6: Error Handling and Defensive Programming, together with control-flow improvements from Week 5: Loops and Conditions.
+
+SECTION 1.2 - PROMPT 2:
+
+Please refine the pseudocode to create a clearer, beginner-friendly user experience by adding a dedicated show_menu() with clean formatting, displaying the current task count after add/remove actions, showing a header like “Your Tasks (N):” and a friendly message when the list is empty, printing concise summaries after save/load (e.g., “Saved X tasks to name”), confirming exit with “Are you sure? (y/n)”, and keeping everything simple using only print statements, loops, and conditionals.
+
+AI RESPONSE:
+
+Data model & simple helpers
+
+tasks = []         # list of {"id": int, "text": string}
+next_id = 1
+
+FUNCTION trim(text):
+    # remove leading/trailing spaces
+    RETURN text without leading/trailing spaces
+
+FUNCTION lower(text):
+    # lowercase version
+    RETURN lowercase of text
+
+FUNCTION normalize(text):
+    RETURN lower(trim(text))
+
+FUNCTION has_duplicate_text(tasks, candidate_text):
+    new_norm = normalize(candidate_text)
+    FOR i FROM 0 TO LENGTH(tasks)-1:
+        IF normalize(tasks[i]["text"]) == new_norm:
+            RETURN True
+    RETURN False
+
+FUNCTION find_task_index_by_id(tasks, target_id):
+    # target_id is an integer
+    FOR i FROM 0 TO LENGTH(tasks)-1:
+        IF tasks[i]["id"] == target_id:
+            RETURN i
+    RETURN -1
+     
+Clean menu
+
+
+FUNCTION show_menu():
+    PRINT ""
+    PRINT "=============================="
+    PRINT "        TASK MANAGER"
+    PRINT "=============================="
+    PRINT "1) Add task"
+    PRINT "2) List tasks"
+    PRINT "3) Remove task"
+    PRINT "4) Save to file (optional)"
+    PRINT "5) Load from file (optional)"
+    PRINT "0) Exit"
+    PRINT "------------------------------"
+     
+Core features
+
+
+FUNCTION add_task(tasks, next_id):
+    INPUT raw = input("Enter task title: ")
+    title = trim(raw)
+
+    IF title == "":
+        PRINT "❗ Title cannot be blank."
+        RETURN next_id
+
+    IF has_duplicate_text(tasks, title) == True:
+        PRINT "❗ Duplicate title (case-insensitive)."
+        RETURN next_id
+
+    NEW task = {"id": next_id, "text": title}
+    APPEND task TO tasks
+    PRINT "✅ Added [" + next_id + "]: " + title + "  (Total: " + LENGTH(tasks) + ")"
+    RETURN next_id + 1
+     
+
+FUNCTION list_tasks(tasks):
+    count = LENGTH(tasks)
+    IF count == 0:
+        PRINT "Your Tasks (0):"
+        PRINT "  (No tasks yet — add one!)"
+        RETURN
+
+    PRINT "Your Tasks (" + count + "):"
+    FOR each task IN tasks:
+        PRINT "  [" + task["id"] + "] " + task["text"]
+     
+
+FUNCTION remove_task(tasks):
+    IF LENGTH(tasks) == 0:
+        PRINT "❗ Nothing to remove."
+        RETURN
+
+    INPUT raw = input("Enter ID to remove: ")
+    raw = trim(raw)
+
+    # numeric validation with conditionals only
+    IF raw == "":
+        PRINT "❗ Please enter a number."
+        RETURN
+    # check all characters are digits
+    is_all_digits = True
+    FOR each ch IN raw:
+        IF ch NOT IN "0123456789":
+            is_all_digits = False
+    IF is_all_digits == False:
+        PRINT "❗ Please enter a whole number."
+        RETURN
+
+    chosen_id = integer value of raw   # safe because digits were checked
+    idx = find_task_index_by_id(tasks, chosen_id)
+    IF idx == -1:
+        PRINT "❗ No task with ID " + chosen_id + "."
+        RETURN
+
+    removed = tasks[idx]
+    DELETE tasks[idx]
+    PRINT "🗑️ Removed [" + removed["id"] + "]: " + removed["text"] + "  (Total: " + LENGTH(tasks) + ")"
+     
+Optional persistence
+
+
+FUNCTION save_tasks_to_file(tasks, filename):
+    name = trim(filename)
+    IF name == "":
+        PRINT "❗ Filename cannot be blank."
+        RETURN
+
+    # Pseudocode with only conditionals (no exceptions):
+    # TRY OPEN WRITE is represented as a conditional “if can open”
+    can_open = (system can open 'name' for writing)   # abstract condition
+    IF can_open == True:
+        # write each task as "id|text"
+        FOR each task IN tasks:
+            WRITE line (task["id"] + "|" + task["text"]) TO file
+        CLOSE file
+        PRINT "💾 Saved " + LENGTH(tasks) + " tasks to " + name
+    ELSE:
+        PRINT "❗ Could not save to " + name
+     
+
+FUNCTION load_tasks_from_file(filename):
+    name = trim(filename)
+    IF name == "":
+        PRINT "❗ Filename cannot be blank."
+        RETURN (False, [], 0)
+
+    can_open = (system can open 'name' for reading)   # abstract condition
+    IF can_open == False:
+        PRINT "❗ File not found/unreadable. Kept your current tasks."
+        RETURN (False, [], 0)
+
+    NEW tmp_tasks = []
+    max_id_seen = 0
+
+    # read line by line; expect "id|text"
+    FOR each line IN file:
+        line = trim(line)
+        IF line == "":
+            CONTINUE
+        # split into two parts at first "|"
+        pos = position of first "|" in line
+        IF pos == -1:
+            CONTINUE
+        left = substring(line, 0, pos)
+        right = substring(line, pos+1, end)
+
+        # numeric check for left
+        IF left == "":
+            CONTINUE
+        is_digits = True
+        FOR each ch IN left:
+            IF ch NOT IN "0123456789":
+                is_digits = False
+        IF is_digits == False:
+            CONTINUE
+
+        parsed_id = integer value of left
+        APPEND {"id": parsed_id, "text": right} TO tmp_tasks
+        IF parsed_id > max_id_seen:
+            max_id_seen = parsed_id
+
+    CLOSE file
+
+    new_next_id = max_id_seen + 1
+    PRINT "📁 Loaded " + LENGTH(tmp_tasks) + " tasks from " + name
+    RETURN (True, tmp_tasks, new_next_id)
+     
+Main programme flow
+
+LOOP FOREVER:
+    show_menu()
+    INPUT raw_choice = input("Choose an option (0-5): ")
+    raw_choice = trim(raw_choice)
+
+    # validate menu input as single digit 0..5
+    IF raw_choice NOT IN ["0","1","2","3","4","5"]:
+        PRINT "❗ Please enter 0, 1, 2, 3, 4, or 5."
+        CONTINUE
+
+    choice = integer value of raw_choice
+
+    IF choice == 1:
+        next_id = add_task(tasks, next_id)
+
+    ELIF choice == 2:
+        list_tasks(tasks)
+
+    ELIF choice == 3:
+        remove_task(tasks)
+
+    ELIF choice == 4:
+        INPUT fname = input("Save as filename: ")
+        save_tasks_to_file(tasks, fname)
+
+    ELIF choice == 5:
+        INPUT fname = input("Load from filename: ")
+        (ok, new_tasks, new_next) = load_tasks_from_file(fname)
+        IF ok == True:
+            tasks = new_tasks
+            next_id = new_next
+        # else keep current tasks
+
+    ELIF choice == 0:
+        INPUT ans = input("Are you sure? (y/n): ")
+        ans = lower(trim(ans))
+        IF ans == "y":
+            PRINT "Bye!"
+            BREAK
+        ELSE:
+            PRINT "Canceled exit. Returning to menu."
+            # fall through to next loop
+
+COURSE CONSTRAINT CHECK:
+
+This refinement applied user interaction and structured output design concepts from Week 3: Decision-Making and User Interaction, and menu control-flow improvements from Week 5: Loops and Menu Design.
+
+SECTION 2.1 - PROMPT 1:
+
+Please analyse this code for a beginner programming student. Identify errors that a student would typically make, focusing on naming or reference mismatches, control-flow mistakes, index or range errors, input and type conversion problems, data-structure misuse, missing returns or state updates, basic file I/O robustness, and unclear user messages.
+
+AI RESPONSE:
+
+1.Typo in variable name
+
+Where: line ~8 len(tas)
+Symptom: NameError: name 'tas' is not defined
+
+2.Wrong iterable name in list_tasks
+
+Where: line ~19 for i, t in enumerate(task):
+Symptom: NameError: name 'task' is not defined
+
+3.Wrong function name in main
+
+Where: line ~28 list_task()
+Symptom: NameError: name 'list_task' is not defined
+
+4.Bounds check doesn’t prevent negative indexes
+
+Where: line ~8 if index < len(tasks): (after fixing the typo)
+Symptom: Passing -1 (or any negative) will still pass the check and remove the last item (Python allows negative indexing).
+
+5.Type not validated before comparison
+
+Where: line ~8
+Symptom: If index is a string (e.g., from user input), index < len(tasks) raises TypeError.
+
+6.Printed numbering is 1-based but removal expects 0-based
+
+Where: line ~20 f"{i+1}: {t}" vs remove_task(1) removing the second task
+Symptom: User sees “1: Buy milk, 2: Pay bills, 3: Walk dog” but must pass 0 to remove “Buy milk”. Confusing in a CLI.
+
+7.No safe conversion or handling for user input
+
+Where: conceptually in remove_task (and would matter once you read input)
+Symptom: Passing non-int crashes or behaves unexpectedly.
+
+8.Global list with side-effects but no return status
+
+Where: add_task, remove_task
+Symptom: Hard to know if an operation succeeded (e.g., invalid index) outside the function.
+
+9.Functions don’t communicate outcomes
+
+Where: remove_task (and add_task)
+Symptom: Caller can’t react to success/failure.
+
+10.No persistence (not a bug, but a common next step)
+
+Where: N/A (feature gap)
+Symptom: Tasks vanish when the program ends.
+
+11.Generic error messages
+
+Where: print("Invalid index!")
+Symptom: User doesn’t know the valid range or whether indexes are 0- or 1-based.
+
+12.List formatting could be clearer
+
+Where: list_tasks
+Symptom: Harder to read when many tasks.
+
+COURSE CONSTRAINT CHECK:
+
+I applied the debugging and defensive programming approach from Week 6: Error Handling and Debugging lecture/worksheet.
+
+SECTION 2.2 - PROMPT 1:
+
+Please correct the beginner Task Manager code using only intro-level Python. Fix naming/reference mismatches, control-flow, index and range checks, input conversion, duplicate/empty titles, file I/O robustness, and clearer user messages. Keep data in a list of dicts {"id": int, "text": str}. Provide simple functions, a while-loop menu, and basic try/except for int() and file open.
+
+AI RESPONSE:
+[Relevant AI response - you may abbreviate long responses]
+
+COURSE CONSTRAINT CHECK:
+[Note any times you had to modify AI suggestions to fit course constraints]
