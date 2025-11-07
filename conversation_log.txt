@@ -706,7 +706,30 @@ SECTION 2.2 - PROMPT 1:
 Please correct the beginner Task Manager code using only intro-level Python. Fix naming/reference mismatches, control-flow, index and range checks, input conversion, duplicate/empty titles, file I/O robustness, and clearer user messages. Keep data in a list of dicts {"id": int, "text": str}. Provide simple functions, a while-loop menu, and basic try/except for int() and file open.
 
 AI RESPONSE:
-[Relevant AI response - you may abbreviate long responses]
+
+Proposed helpers (trim/normalize/find_by_id), add/list/remove with friendly prints, save/load with try/except, and a small menu with confirmation to quit.
 
 COURSE CONSTRAINT CHECK:
-[Note any times you had to modify AI suggestions to fit course constraints]
+I manually rewrote the full script to match Week 4–6 level and added doctest-style checks separately; no advanced patterns used.
+
+SECTION 3.1 - PROMPT 1:
+Review this function using only error handling techniques taught in an introductory programming course (basic try/except only).
+
+AI RESPONSE:
+
+Concrete failure points include:
+
+1.The network request might fail (for example, if there’s no internet connection or the server is down).
+Fix: Wrap requests.get() in its own try/except and print a clear message like “Could not connect to weather service.”
+2.The HTTP status could be an error (like 404 or 500), but the code doesn’t check it.
+Fix: Add a simple check like if response.status_code != 200: to show a friendly message.
+3.The JSON parsing might fail if the response isn’t valid JSON.
+Fix: Use another small try/except around response.json() to print something like “Error reading weather data.”
+4.The data keys might be missing (for instance, if the API structure changes).
+Fix: Use a separate inner try/except when building the weather_info dictionary, as the improved version already does.
+5.Bad input (like an empty city name) could lead to invalid URLs.
+Fix: Check if not city: before making the request.
+
+COURSE CONSTRAINT CHECK:
+
+Week 6 “basic exception handling” + Week 8 JSON safety via presence checks; no specific exception classes used.
